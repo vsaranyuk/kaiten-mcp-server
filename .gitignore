@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+
+# Claude local settings
+.claude/
+
+# Test files
+test-*.js
+test-*.ts
