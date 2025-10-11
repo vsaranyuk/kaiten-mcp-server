@@ -3,6 +3,8 @@ import axiosRetry from 'axios-retry';
 import { default as PQueue } from 'p-queue';
 import { randomBytes } from 'crypto';
 import { config, safeLog } from './config.js';
+import { logger } from './logging/index.js';
+import { setupLoggingMiddleware } from './middleware/logging-middleware.js';
 
 // ============================================
 // ENHANCED ERROR TYPES
@@ -120,6 +122,13 @@ export interface KaitenCard {
   comment_last_added_at?: string;
   properties?: Record<string, any>;
   custom_fields?: Record<string, any>;
+  // Card relationships (counts from API)
+  parents_count?: number;
+  children_count?: number;
+  children_done?: number;
+  // Populated by additional requests
+  parent_cards?: KaitenCard[];
+  children_cards?: KaitenCard[];
 }
 
 export interface KaitenComment {
@@ -246,6 +255,9 @@ export class KaitenClient {
       }
     );
 
+    // Setup logging middleware
+    setupLoggingMiddleware(this.client);
+
     // Initialize concurrency queue
     this.queue = new PQueue({
       concurrency: config.KAITEN_MAX_CONCURRENT_REQUESTS,
@@ -256,6 +268,12 @@ export class KaitenClient {
     safeLog.info(
       `KaitenClient initialized with ${config.KAITEN_MAX_CONCURRENT_REQUESTS} max concurrent requests`
     );
+
+    logger.info('KaitenClient initialized', {
+      max_concurrent: config.KAITEN_MAX_CONCURRENT_REQUESTS,
+      cache_ttl: config.KAITEN_CACHE_TTL_SECONDS,
+      timeout: config.KAITEN_REQUEST_TIMEOUT_MS,
+    }, 'kaiten-client');
   }
 
   // Enhanced error handler
@@ -439,18 +457,50 @@ export class KaitenClient {
 
   // Search cards (using filters)
   async searchCards(params: {
+    // Text search
     query?: string;
+    title?: string;
+
+    // Basic filters
     space_id?: number;
     board_id?: number;
     column_id?: number;
     lane_id?: number;
-    title?: string;
     state?: number;
     owner_id?: number;
     type_id?: number;
     condition?: number;
+
+    // Date filters
     created_before?: string;
     created_after?: string;
+    updated_before?: string;
+    updated_after?: string;
+    due_date_before?: string;
+    due_date_after?: string;
+    last_moved_to_done_at_before?: string;
+    last_moved_to_done_at_after?: string;
+
+    // Boolean flags
+    asap?: boolean;
+    archived?: boolean;
+    overdue?: boolean;
+    done_on_time?: boolean;
+    with_due_date?: boolean;
+
+    // Multiple IDs (comma-separated)
+    owner_ids?: string;
+    member_ids?: string;
+    column_ids?: string;
+    type_ids?: string;
+    tag_ids?: string;
+
+    // Exclude filters
+    exclude_board_ids?: string;
+    exclude_owner_ids?: string;
+    exclude_card_ids?: string;
+
+    // Sorting and pagination
     sort_by?: string;
     sort_direction?: string;
     limit?: number;
@@ -472,6 +522,7 @@ export class KaitenClient {
       queryParams.append('sort_by', sortBy);
       queryParams.append('sort_direction', sortDirection);
 
+      // Add all other parameters (exclude already processed ones)
       Object.entries(params).forEach(([key, value]) => {
         if (
           value !== undefined &&
@@ -539,10 +590,10 @@ export class KaitenClient {
   }
 
   // Board operations
-  async getBoards(spaceId?: number, signal?: AbortSignal): Promise<KaitenBoard[]> {
+  async getBoards(spaceId: number, signal?: AbortSignal): Promise<KaitenBoard[]> {
     return this.queuedRequest(async () => {
-      const url = spaceId ? `/spaces/${spaceId}/boards` : '/boards';
-      const response = await this.client.get(url, { signal });
+      // spaceId is now required - Kaiten API doesn't support /boards without space_id
+      const response = await this.client.get(`/spaces/${spaceId}/boards`, { signal });
       return response.data;
     }, signal);
   }
@@ -584,25 +635,32 @@ export class KaitenClient {
     }, signal);
   }
 
-  async getUsers(params?: { query?: string; limit?: number }, signal?: AbortSignal): Promise<KaitenUser[]> {
+  async getUsers(params?: {
+    query?: string;
+    limit?: number;
+    offset?: number;
+  }, signal?: AbortSignal): Promise<KaitenUser[]> {
     return this.queuedRequest(async () => {
+      // Use /users endpoint with server-side filtering support
+      // According to Kaiten API docs, /users supports query, limit, and offset parameters
+      const queryParams: any = {};
+
       if (params?.query) {
-        // Client-side filtering by query if API doesn't support it
-        const response = await this.client.get('/users', { signal });
-        const allUsers: KaitenUser[] = response.data;
-
-        const query = params.query.toLowerCase();
-        const filtered = allUsers.filter(
-          (user) =>
-            user.full_name?.toLowerCase().includes(query) ||
-            user.email?.toLowerCase().includes(query) ||
-            user.username?.toLowerCase().includes(query)
-        );
-
-        return params.limit ? filtered.slice(0, params.limit) : filtered;
+        queryParams.query = params.query;
       }
 
-      const response = await this.client.get('/users', { signal });
+      if (params?.limit !== undefined) {
+        queryParams.limit = params.limit;
+      }
+
+      if (params?.offset !== undefined) {
+        queryParams.offset = params.offset;
+      }
+
+      const response = await this.client.get('/users', {
+        params: queryParams,
+        signal
+      });
       return response.data;
     }, signal);
   }
