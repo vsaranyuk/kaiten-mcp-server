@@ -574,6 +574,14 @@ export class KaitenClient {
     }, signal);
   }
 
+  // Card relationships
+  async getCardChildren(cardId: number, signal?: AbortSignal): Promise<KaitenCard[]> {
+    return this.queuedRequest(async () => {
+      const response = await this.client.get(`/cards/${cardId}/children`, { signal });
+      return response.data;
+    }, signal);
+  }
+
   // Space operations
   async getSpaces(signal?: AbortSignal): Promise<KaitenSpace[]> {
     return this.queuedRequest(async () => {

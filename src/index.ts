@@ -1114,10 +1114,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             const doneCount = card.children_done || 0;
             const totalCount = card.children_count || 0;
             const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
-            output += `📋 Subtasks: ${doneCount}/${totalCount} done (${progress}%)\n`;
+            output += `📋 Subtasks: ${doneCount}/${totalCount} done (${progress}%)\n\n`;
+
+            // Fetch children cards to show detailed list
+            try {
+              const children = await kaitenClient.getCardChildren(validatedArgs.card_id, signal);
+              if (children && children.length > 0) {
+                children.forEach((child, index) => {
+                  const baseUrl = API_URL!.replace('/api/latest', '');
+                  const childSpaceId = child.space_id || child.board?.space_id || DEFAULT_SPACE_ID || '';
+                  const childUrl = `${baseUrl}/space/${childSpaceId}/card/${child.id}`;
+
+                  // State icons: 1=queued (⏳), 2=in progress (🔄), 3=done (✅)
+                  const stateIcon = child.state === 3 ? '✅' : child.state === 2 ? '🔄' : '⏳';
+                  const ownerInfo = child.owner?.full_name ? ` · ${child.owner.full_name}` : '';
+
+                  output += `${index + 1}. ${stateIcon} [#${child.id}] ${child.title}${ownerInfo}\n`;
+                  output += `   ${childUrl}\n`;
+                });
+              }
+            } catch (error) {
+              safeLog.warn(`Failed to fetch children cards: ${error}`);
+              output += `\nℹ️ Unable to load child cards details. Use kaiten_search_cards to find them.\n`;
+            }
           }
 
-          output += `\nℹ️ To view detailed information about related cards, search by parent/child card ID in Kaiten.\n`;
+          if (hasParents) {
+            output += `\nℹ️ To view parent card details, search by parent card ID in Kaiten.\n`;
+          }
         }
 
         if (simplified.description) {
