@@ -1,4 +1,5 @@
 node_modules/
+new_features/
 dist/
 .env
 *.log
@@ -10,3 +11,7 @@ dist/
 # Test files
 test-*.js
 test-*.ts
+
+# Logs
+logs/*.log
+logs/*.csv

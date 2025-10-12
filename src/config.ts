@@ -63,6 +63,54 @@ const EnvSchema = z.object({
       'KAITEN_REQUEST_TIMEOUT_MS must be between 1 and 60000'
     )
     .describe('Request timeout in milliseconds'),
+
+  // Logging configuration
+  KAITEN_LOG_ENABLED: z
+    .string()
+    .optional()
+    .default('true')
+    .transform((val) => val !== 'false')
+    .describe('Enable/disable all logging'),
+
+  KAITEN_LOG_LEVEL: z
+    .enum(['debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'])
+    .optional()
+    .default('error')
+    .describe('Log level'),
+
+  KAITEN_LOG_MCP_ENABLED: z
+    .string()
+    .optional()
+    .default('false')
+    .transform((val) => val === 'true')
+    .describe('Send logs to MCP client'),
+
+  KAITEN_LOG_FILE_ENABLED: z
+    .string()
+    .optional()
+    .default('false')
+    .transform((val) => val === 'true')
+    .describe('Write logs to file'),
+
+  KAITEN_LOG_REQUESTS: z
+    .string()
+    .optional()
+    .default('false')
+    .transform((val) => val === 'true')
+    .describe('Log all HTTP requests/responses'),
+
+  KAITEN_LOG_METRICS: z
+    .string()
+    .optional()
+    .default('false')
+    .transform((val) => val === 'true')
+    .describe('Collect performance metrics'),
+
+  KAITEN_LOG_FILE_PATH: z
+    .string()
+    .optional()
+    .default('./logs/kaiten-mcp.log')
+    .describe('Path to log file'),
 });
 
 export type EnvConfig = z.infer<typeof EnvSchema>;
@@ -76,6 +124,13 @@ function loadConfig(): EnvConfig {
     KAITEN_MAX_CONCURRENT_REQUESTS: process.env.KAITEN_MAX_CONCURRENT_REQUESTS,
     KAITEN_CACHE_TTL_SECONDS: process.env.KAITEN_CACHE_TTL_SECONDS,
     KAITEN_REQUEST_TIMEOUT_MS: process.env.KAITEN_REQUEST_TIMEOUT_MS,
+    KAITEN_LOG_ENABLED: process.env.KAITEN_LOG_ENABLED,
+    KAITEN_LOG_LEVEL: process.env.KAITEN_LOG_LEVEL,
+    KAITEN_LOG_MCP_ENABLED: process.env.KAITEN_LOG_MCP_ENABLED,
+    KAITEN_LOG_FILE_ENABLED: process.env.KAITEN_LOG_FILE_ENABLED,
+    KAITEN_LOG_REQUESTS: process.env.KAITEN_LOG_REQUESTS,
+    KAITEN_LOG_METRICS: process.env.KAITEN_LOG_METRICS,
+    KAITEN_LOG_FILE_PATH: process.env.KAITEN_LOG_FILE_PATH,
   });
 
   if (!result.success) {
@@ -87,7 +142,7 @@ function loadConfig(): EnvConfig {
     console.error(errors.join('\n'));
     console.error('\n💡 Please check your .env file and ensure all required variables are set correctly.');
     console.error('   Required: KAITEN_API_URL, KAITEN_API_TOKEN');
-    console.error('   Optional: KAITEN_DEFAULT_SPACE_ID, KAITEN_MAX_CONCURRENT_REQUESTS, KAITEN_CACHE_TTL_SECONDS, KAITEN_REQUEST_TIMEOUT_MS');
+    console.error('   Optional: KAITEN_DEFAULT_SPACE_ID, KAITEN_MAX_CONCURRENT_REQUESTS, KAITEN_CACHE_TTL_SECONDS, KAITEN_REQUEST_TIMEOUT_MS, logging options');
 
     process.exit(1);
   }
@@ -158,3 +213,10 @@ safeLog.info(`   Default Space ID: ${config.KAITEN_DEFAULT_SPACE_ID || 'not set'
 safeLog.info(`   Max Concurrent Requests: ${config.KAITEN_MAX_CONCURRENT_REQUESTS}`);
 safeLog.info(`   Cache TTL: ${config.KAITEN_CACHE_TTL_SECONDS}s`);
 safeLog.info(`   Request Timeout: ${config.KAITEN_REQUEST_TIMEOUT_MS}ms`);
+safeLog.info('✅ Logging configuration:');
+safeLog.info(`   Enabled: ${config.KAITEN_LOG_ENABLED}`);
+safeLog.info(`   Level: ${config.KAITEN_LOG_LEVEL}`);
+safeLog.info(`   MCP Logs: ${config.KAITEN_LOG_MCP_ENABLED}`);
+safeLog.info(`   File Logs: ${config.KAITEN_LOG_FILE_ENABLED}`);
+safeLog.info(`   Request Logs: ${config.KAITEN_LOG_REQUESTS}`);
+safeLog.info(`   Metrics: ${config.KAITEN_LOG_METRICS}`);

@@ -1120,7 +1120,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             try {
               const children = await kaitenClient.getCardChildren(validatedArgs.card_id, signal);
               if (children && children.length > 0) {
-                children.forEach((child, index) => {
+                // Fetch full details for blocked cards (to get blocking reason)
+                const childrenWithBlockingDetails = await Promise.all(
+                  children.map(async (child) => {
+                    if (child.blocked) {
+                      try {
+                        const fullCard = await kaitenClient.getCard(child.id, signal);
+                        return fullCard;
+                      } catch (error) {
+                        safeLog.warn(`Failed to fetch blocking details for card ${child.id}: ${error}`);
+                        return child;
+                      }
+                    }
+                    return child;
+                  })
+                );
+
+                childrenWithBlockingDetails.forEach((child, index) => {
                   const baseUrl = API_URL!.replace('/api/latest', '');
                   const childSpaceId = child.space_id || child.board?.space_id || DEFAULT_SPACE_ID || '';
                   const childUrl = `${baseUrl}/space/${childSpaceId}/card/${child.id}`;
@@ -1129,7 +1145,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                   const stateIcon = child.state === 3 ? '✅' : child.state === 2 ? '🔄' : '⏳';
                   const ownerInfo = child.owner?.full_name ? ` · ${child.owner.full_name}` : '';
 
-                  output += `${index + 1}. ${stateIcon} [#${child.id}] ${child.title}${ownerInfo}\n`;
+                  // Blocking info
+                  const blockIcon = child.blocked ? ' 🚫' : '';
+
+                  output += `${index + 1}. ${stateIcon} [#${child.id}] ${child.title}${blockIcon}${ownerInfo}\n`;
+
+                  if (child.blocked && child.blockers && child.blockers.length > 0 && child.blockers[0].reason) {
+                    output += `   🚫 ${child.blockers[0].reason}\n`;
+                  }
+
                   output += `   ${childUrl}\n`;
                 });
               }

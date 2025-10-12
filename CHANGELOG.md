@@ -1,5 +1,103 @@
 # Changelog
 
+## [2.3.0] - 2025-10-11
+
+### 📊 Logging & Monitoring Release
+
+### Added
+- **Comprehensive Logging System**: Complete observability infrastructure with multiple output modes
+  - **File Logging**: Structured JSON logs via Pino (fastest Node.js logger) with automatic secret redaction
+  - **MCP Logging**: Send logs to MCP client via `notifications/message` for real-time visibility
+  - **RFC 5424 Log Levels**: debug, info, notice, warning, error, critical, alert, emergency + off
+  - **Fail-Safe Design**: All logging wrapped in try-catch, never crashes the application
+- **Performance Metrics**: Comprehensive metrics collection and analysis
+  - Records all tool executions with latency, success rate, cache hits
+  - In-memory storage (last 10,000 metrics)
+  - Aggregation by tool (count, avg/min/max latency, success rate, cache hit rate)
+  - CSV export for detailed analysis
+- **Runtime Configuration Control**: Change logging without restart
+  - New tool: `kaiten_set_log_level` - Update logging config in real-time
+  - Toggle log level, MCP logs, file logs, request logs, metrics on-the-fly
+  - Perfect for debugging production issues
+- **HTTP Request Logging**: Axios interceptor middleware
+  - Logs all HTTP requests/responses (optional, disabled by default)
+  - Captures method, URL, status, duration
+  - Automatic metrics recording for all API calls
+- **7 New Environment Variables**:
+  - `KAITEN_LOG_ENABLED` (default: true) - Master logging switch
+  - `KAITEN_LOG_LEVEL` (default: error) - Log level threshold
+  - `KAITEN_LOG_MCP_ENABLED` (default: false) - MCP client logs
+  - `KAITEN_LOG_FILE_ENABLED` (default: false) - File logging
+  - `KAITEN_LOG_FILE_PATH` (default: ./logs/kaiten-mcp.log) - Log file location
+  - `KAITEN_LOG_REQUESTS` (default: false) - HTTP request/response logging
+  - `KAITEN_LOG_METRICS` (default: false) - Performance metrics collection
+- **Ready-Made Profiles**: Pre-configured logging setups in `.env.example`
+  - **Production**: Minimal logging (errors only)
+  - **Development**: Moderate logging (info + file + metrics)
+  - **Debug**: Full logging (debug + MCP + file + requests + metrics)
+
+### Changed
+- **kaiten_get_status**: Now includes logging config and performance metrics
+- **Server startup**: Shows logging configuration and runtime control availability
+- **Version**: Updated to 2.3.0
+- **Tool count**: Increased from 25 to 26 tools
+
+### New Files
+- `src/logging/types.ts` (40 lines) - LogLevel enum, interfaces
+- `src/logging/file-logger.ts` (80 lines) - Pino file logger with redaction
+- `src/logging/mcp-logger.ts` (50 lines) - MCP notifications logger
+- `src/logging/metrics.ts` (120 lines) - Performance metrics collector
+- `src/logging/logger.ts` (145 lines) - Unified logger singleton
+- `src/logging/index.ts` (5 lines) - Clean exports
+- `src/middleware/logging-middleware.ts` (85 lines) - Axios logging interceptor
+- `logs/.gitkeep` - Logs directory placeholder
+- `LOGGING_IMPLEMENTATION_PLAN.md` (600+ lines) - Complete architecture documentation
+
+### Modified Files
+- `src/config.ts`: +50 lines (7 new ENV variables with validation)
+- `src/schemas.ts`: +15 lines (SetLogLevelSchema)
+- `src/kaiten-client.ts`: +10 lines (logging middleware integration)
+- `src/index.ts`: +60 lines (new tool, logger init, updated handlers)
+- `.env.example`: +60 lines (logging documentation with profiles)
+- `.gitignore`: +2 lines (logs/*.log, logs/*.csv)
+- `README.md`: Updated with logging documentation
+- `CHANGELOG.md`: This entry
+- `package.json`: +1 dependency (pino)
+
+### Improved
+- **Observability**: Full visibility into server operations and performance
+- **Debugging**: Runtime log level changes enable live debugging without restart
+- **Security**: All secrets automatically redacted in logs (via existing redactSecrets function)
+- **Performance Analysis**: Metrics provide insights into tool usage patterns and bottlenecks
+- **Developer Experience**:
+  - Easy to enable/disable logging as needed
+  - Multiple output modes (MCP, file, stderr)
+  - Structured JSON logs for machine parsing
+  - Human-readable log levels
+
+### Technical Details
+- **Architecture**: Clean separation with `src/logging/` directory (440 lines)
+- **Dependencies**: Added `pino@^10.0.0` (25KB, fastest Node.js logger)
+- **Pattern**: Singleton logger with dependency injection ready
+- **Breaking Changes**: None (100% backward compatible)
+- **Default Behavior**: All logging disabled by default (production-safe)
+
+### Migration from v2.2.0
+1. Run `npm install` to install pino
+2. (Optional) Add logging ENV variables to `.env` (see `.env.example`)
+3. Run `npm run build`
+4. Restart Claude Desktop
+
+**Note**: Server works perfectly without any logging configuration (all disabled by default).
+
+### Use Cases
+- **Production Debugging**: Enable file logging temporarily to diagnose issues
+- **Performance Analysis**: Collect metrics to identify slow tools
+- **Development**: Use debug profile for detailed insights
+- **MCP Integration Testing**: Enable MCP logs to see real-time events in client
+
+---
+
 ## [2.2.0] - 2025-10-10
 
 ### 🎨 Architecture/UX Release
