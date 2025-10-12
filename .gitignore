@@ -1,5 +1,6 @@
 node_modules/
 new_features/
+New features/
 dist/
 .env
 *.log
