@@ -465,7 +465,7 @@ MIT
 
 ## Документация
 
-- **[TOOLS.md](./TOOLS.md)** - Полный справочник всех 17 инструментов
+- **[TOOLS.md](./TOOLS.md)** - Полный справочник всех 26 инструментов
 - **[CHANGELOG.md](./CHANGELOG.md)** - История изменений
 - **[DEFAULT_SPACE_GUIDE.md](./DEFAULT_SPACE_GUIDE.md)** - Руководство по Default Space
 - **[Kaiten API Docs](https://developers.kaiten.ru/)** - Официальная документация API
