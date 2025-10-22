@@ -8,13 +8,33 @@ export const IdempotencyKeySchema = z.string().optional().describe(
   'Unique idempotency key to prevent duplicate operations. Use the same key for retries. Format: client-generated UUID or timestamp-based string.'
 );
 
+export const VerbosityEnum = z.enum(['minimal', 'normal', 'detailed'])
+  .optional()
+  .default('normal')
+  .describe(
+    'Response detail level: ' +
+    'minimal (id + name/title only, for quick lists), ' +
+    'normal (essential fields with human-readable info, default), ' +
+    'detailed (full API response with all metadata)'
+  );
+
+export const ResponseFormatEnum = z.enum(['json', 'markdown'])
+  .optional()
+  .default('markdown')
+  .describe(
+    'Response format: ' +
+    'json (structured data for programmatic use), ' +
+    'markdown (human-readable formatted text, default)'
+  );
+
 // ============================================
 // CARD SCHEMAS
 // ============================================
 
 export const GetCardSchema = z.object({
   card_id: z.number().positive().int().describe('The ID of the card to retrieve'),
-});
+  format: ResponseFormatEnum,
+}).strict();
 
 export const CreateCardSchema = z.object({
   title: z.string().min(1).max(500).describe('The title of the card'),
@@ -28,7 +48,7 @@ export const CreateCardSchema = z.object({
   owner_id: z.number().positive().int().optional().describe('The ID of the card owner (optional)'),
   due_date: z.string().optional().describe('Due date in ISO format (optional)'),
   idempotency_key: IdempotencyKeySchema,
-});
+}).strict();
 
 export const UpdateCardSchema = z.object({
   card_id: z.number().positive().int().describe('The ID of the card to update'),
@@ -43,11 +63,11 @@ export const UpdateCardSchema = z.object({
   owner_id: z.number().positive().int().optional().describe('The new owner ID (optional)'),
   due_date: z.string().optional().describe('New due date in ISO format (optional)'),
   idempotency_key: IdempotencyKeySchema,
-});
+}).strict();
 
 export const DeleteCardSchema = z.object({
   card_id: z.number().positive().int().describe('The ID of the card to delete'),
-});
+}).strict();
 
 export const SearchCardsSchema = z.object({
   // Text search
@@ -98,21 +118,26 @@ export const SearchCardsSchema = z.object({
   sort_direction: z.enum(['asc', 'desc']).optional().describe('Sort direction (default: desc)'),
   limit: z.number().positive().int().max(20).optional().describe('Maximum number of cards to return (default: 10, max: 20 for context economy)'),
   skip: z.number().min(0).int().optional().describe('Number of cards to skip for pagination (default: 0)'),
-});
+
+  // Response control
+  verbosity: VerbosityEnum,
+}).strict();
 
 export const GetSpaceCardsSchema = z.object({
   space_id: z.number().positive().int().describe('The ID of the space'),
   limit: z.number().positive().int().max(20).optional().describe('Maximum number of cards (default: 10, max: 20)'),
   skip: z.number().min(0).int().optional().describe('Number of cards to skip (default: 0)'),
   condition: z.number().min(1).max(2).optional().describe('Filter by condition: 1=active (default), 2=archived'),
-});
+  verbosity: VerbosityEnum,
+}).strict();
 
 export const GetBoardCardsSchema = z.object({
   board_id: z.number().positive().int().describe('The ID of the board'),
   limit: z.number().positive().int().max(20).optional().describe('Maximum number of cards (default: 10, max: 20)'),
   skip: z.number().min(0).int().optional().describe('Number of cards to skip (default: 0)'),
   condition: z.number().min(1).max(2).optional().describe('Filter by condition: 1=active (default), 2=archived'),
-});
+  verbosity: VerbosityEnum,
+}).strict();
 
 // ============================================
 // COMMENT SCHEMAS
@@ -120,25 +145,25 @@ export const GetBoardCardsSchema = z.object({
 
 export const GetCardCommentsSchema = z.object({
   card_id: z.number().positive().int().describe('The ID of the card'),
-});
+}).strict();
 
 export const CreateCommentSchema = z.object({
   card_id: z.number().positive().int().describe('The ID of the card'),
   text: z.string().min(1).describe('The comment text'),
   idempotency_key: IdempotencyKeySchema,
-});
+}).strict();
 
 export const UpdateCommentSchema = z.object({
   card_id: z.number().positive().int().describe('The ID of the card'),
   comment_id: z.number().positive().int().describe('The ID of the comment to update'),
   text: z.string().min(1).describe('The new comment text'),
   idempotency_key: IdempotencyKeySchema,
-});
+}).strict();
 
 export const DeleteCommentSchema = z.object({
   card_id: z.number().positive().int().describe('The ID of the card'),
   comment_id: z.number().positive().int().describe('The ID of the comment to delete'),
-});
+}).strict();
 
 // ============================================
 // SPACE SCHEMAS
@@ -146,7 +171,8 @@ export const DeleteCommentSchema = z.object({
 
 export const GetSpaceSchema = z.object({
   space_id: z.number().positive().int().describe('The ID of the space'),
-});
+  format: ResponseFormatEnum,
+}).strict();
 
 // ============================================
 // BOARD SCHEMAS
@@ -154,11 +180,13 @@ export const GetSpaceSchema = z.object({
 
 export const ListBoardsSchema = z.object({
   space_id: z.number().positive().int().optional().describe('Filter by space ID (optional)'),
-});
+  verbosity: VerbosityEnum,
+}).strict();
 
 export const GetBoardSchema = z.object({
   board_id: z.number().positive().int().describe('The ID of the board'),
-});
+  format: ResponseFormatEnum,
+}).strict();
 
 // ============================================
 // BOARD СПРАВОЧНИКИ (COLUMNS, LANES, TYPES)
@@ -166,15 +194,15 @@ export const GetBoardSchema = z.object({
 
 export const ListColumnsSchema = z.object({
   board_id: z.number().positive().int().describe('The ID of the board'),
-});
+}).strict();
 
 export const ListLanesSchema = z.object({
   board_id: z.number().positive().int().describe('The ID of the board'),
-});
+}).strict();
 
 export const ListTypesSchema = z.object({
   board_id: z.number().positive().int().describe('The ID of the board'),
-});
+}).strict();
 
 // ============================================
 // USER SCHEMAS
@@ -184,7 +212,8 @@ export const ListUsersSchema = z.object({
   query: z.string().optional().describe('Search query to filter users by email and full_name (server-side filtering)'),
   limit: z.number().positive().int().max(100).optional().describe('Maximum number of users to return (default: 100)'),
   offset: z.number().min(0).int().optional().describe('Number of records to skip for pagination (default: 0)'),
-});
+  verbosity: VerbosityEnum,
+}).strict();
 
 // GetCurrentUser has no parameters, so no schema needed
 
@@ -198,7 +227,7 @@ export const SetLogLevelSchema = z.object({
   enable_file_logs: z.boolean().optional().describe('Enable/disable file logs'),
   enable_request_logs: z.boolean().optional().describe('Enable/disable detailed request logging'),
   enable_metrics: z.boolean().optional().describe('Enable/disable performance metrics collection'),
-});
+}).strict();
 
 // ============================================
 // TYPES FOR VALIDATED DATA

@@ -1,7 +1,7 @@
 {
   "name": "mcp-kaiten",
-  "version": "2.3.0",
-  "description": "MCP server for Kaiten API integration with Claude - Production-ready with Logging & Monitoring, Verbosity control, Idempotency, Board справочники",
+  "version": "2.4.0",
+  "description": "MCP server for Kaiten API integration with Claude - Production-ready with Token Economy (90% savings), Verbosity control, Response formats, Logging & Monitoring",
   "main": "dist/index.js",
   "bin": {
     "kaiten-mcp-server": "./dist/index.js"

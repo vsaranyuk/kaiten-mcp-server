@@ -6,6 +6,9 @@ dist/
 *.log
 .DS_Store
 
+# Context and working files
+Context/
+
 # Claude local settings
 .claude/
 
@@ -16,3 +19,8 @@ test-*.ts
 # Logs
 logs/*.log
 logs/*.csv
+
+# Evaluations with user data
+evaluations/custom-eval.xml
+evaluations/*-eval.xml
+!evaluations/kaiten-eval-template.xml

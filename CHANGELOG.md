@@ -1,5 +1,67 @@
 # Changelog
 
+## [2.4.0] - 2025-10-22
+
+### 🎛️ Token Economy & UX Release
+
+### Added
+- **Verbosity Control**: Управление детализацией ответов с тремя уровнями
+  - `minimal` - Ультра-компактный формат (id + title), экономия до 90% токенов
+  - `normal` - Сбалансированный формат с essential полями (по умолчанию), экономия ~80%
+  - `detailed` - Полный API response со всеми метаданными
+  - Применяется к 5 инструментам: search_cards, get_space_cards, get_board_cards, list_users, list_boards
+- **Response Format Options**: Выбор формата вывода
+  - `markdown` - Человеко-читаемый формат с форматированием (по умолчанию)
+  - `json` - Структурированные данные для программной обработки
+  - Применяется к 3 инструментам: get_card, get_space, get_board
+- **Character Truncation**: Автоматическая защита от переполнения контекста
+  - Авто-обрезка на 100,000 символов (~25k токенов)
+  - Четкое предупреждение с рекомендациями при срабатывании
+  - Применяется ко всем list-операциям
+- **Evaluation Suite**: Готовая инфраструктура для тестирования
+  - `evaluations/kaiten-eval-template.xml` - Шаблон с 10 тестовыми вопросами
+  - `evaluations/README.md` - Полное руководство по созданию evaluations
+  - 4 категории вопросов: Search & Discovery, Data Aggregation, Relationship Navigation, Workflow Simulation
+  - Поддержка MCP evaluation harness
+- **Comprehensive Utilities**: Новый модуль с 11 функциями
+  - `src/utils.ts` (300+ строк) - Полный набор utility функций
+  - `truncateResponse()` - Умная обрезка с сохранением структуры
+  - `applyCardVerbosity()` - Verbosity для карточек
+  - `applyUserVerbosity()` - Verbosity для пользователей
+  - `applyBoardVerbosity()` - Verbosity для досок
+  - `applyResponseFormat()` - Форматирование в JSON/Markdown
+  - `formatCardAsMarkdown()`, `formatSpaceAsMarkdown()`, `formatBoardAsMarkdown()` - Markdown рендеринг
+
+### Changed
+- **kaiten_search_cards**: Добавлен параметр `verbosity` (optional, default: 'normal')
+- **kaiten_get_space_cards**: Добавлен параметр `verbosity` (optional, default: 'normal')
+- **kaiten_get_board_cards**: Добавлен параметр `verbosity` (optional, default: 'normal')
+- **kaiten_list_users**: Добавлен параметр `verbosity` (optional, default: 'normal')
+- **kaiten_list_boards**: Добавлен параметр `verbosity` (optional, default: 'normal')
+- **kaiten_get_card**: Добавлен параметр `format` (optional, default: 'markdown')
+- **kaiten_get_space**: Добавлен параметр `format` (optional, default: 'markdown')
+- **kaiten_get_board**: Добавлен параметр `format` (optional, default: 'markdown')
+- **Version**: Updated to 2.4.0
+- **Tool descriptions**: Расширены описания 8 инструментов с примерами использования новых параметров
+
+### Improved
+- **Token Economy**: До 90% экономия токенов с `verbosity: 'minimal'`
+- **Context Safety**: Автоматическая защита от переполнения MCP context limits
+- **User Control**: Явный выбор уровня детализации и формата вывода
+- **Documentation**: Добавлены CLAUDE.md и PHASE_2_COMPLETE.md
+
+### New Files
+- `src/utils.ts` (300+ lines) - Comprehensive utility functions
+- `evaluations/README.md` (150+ lines) - Evaluation guide
+- `evaluations/kaiten-eval-template.xml` (200+ lines) - 10 test questions
+- `CLAUDE.md` (230+ lines) - Instructions for Claude Code
+- `PHASE_2_COMPLETE.md` (440+ lines) - Phase 2 completion report
+
+### Migration Notes
+- **100% Backward Compatible**: Все параметры optional с sensible defaults
+- Существующий код работает без изменений
+- Defaults: `verbosity: 'normal'`, `format: 'markdown'`
+
 ## [2.3.0] - 2025-10-11
 
 ### 📊 Logging & Monitoring Release
